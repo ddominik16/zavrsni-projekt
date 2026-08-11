@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+.env
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Docker / baza
+neo4j/backups/*.dump
+neo4j/import/*.csv
+
+# Editori
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
