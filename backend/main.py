@@ -1,11 +1,3 @@
-"""FastAPI backend za zavrsni rad — graf filmske suradnje u Neo4ju.
-
-Pokretanje:
-    uvicorn main:app --reload
-
-Dokumentacija endpointa je na /docs (FastAPI je sam generira).
-"""
-
 import os
 from contextlib import asynccontextmanager
 
@@ -64,8 +56,6 @@ def health():
     return {"database": "ok" if ok else "unreachable"}
 
 
-# ------------------------------------------------------------------ pregled
-
 @app.get("/api/stats")
 def stats():
     row = database.run_one(queries.STATS)
@@ -84,7 +74,6 @@ def top_pairs(limit: int = Query(10, ge=1, le=50)):
     return database.run(queries.TOP_PAIRS, limit=limit)
 
 
-# ----------------------------------------------------------------- pretraga
 
 @app.get("/api/search/movies")
 def search_movies(q: str = Query(..., min_length=2),
@@ -107,7 +96,7 @@ def movie_detail(movie_id: str):
     return row
 
 
-# ---------------------------------------------------------------- preporuke
+
 
 @app.get("/api/movies/{movie_id}/recommendations")
 def recommendations(movie_id: str,
@@ -121,7 +110,6 @@ def recommendations(movie_id: str,
         maxPerCommunity=max_per_community,
     )
 
-    # Cypher vraca ravnu listu; razdvajamo je na dvije razine za frontend.
     graph_tier = [r["item"] for r in rows if r["tier"] == 1]
     genre_tier = [r["item"] for r in rows if r["tier"] == 2]
 
@@ -137,7 +125,6 @@ def recommendations(movie_id: str,
     }
 
 
-# -------------------------------------------------------------------- mreza
 
 @app.get("/api/network/{person_id}")
 def ego_network(person_id: str, limit: int = Query(60, ge=10, le=200)):
@@ -165,7 +152,6 @@ def shortest_path(from_id: str = Query(..., alias="from"),
     return row
 
 
-# ---------------------------------------------------------------- analitika
 
 @app.get("/api/analytics/centrality")
 def centrality(measure: str = Query("pageRank"),
@@ -189,3 +175,161 @@ def community_members(community_id: int, limit: int = Query(30, ge=1, le=100)):
     if not rows:
         raise HTTPException(status_code=404, detail="Zajednica nije pronadjena")
     return rows
+
+
+_cache = {}
+
+
+def cached(key, fn):
+    if key not in _cache:
+        _cache[key] = fn()
+    return _cache[key]
+
+
+@app.get("/api/analytics/bridging")
+def bridging(limit: int = Query(8, ge=2, le=20)):
+    """Koliki dio vanjskih veza zajednice nose njenih deset najpovezanijih."""
+
+    def compute():
+        totals = database.run(queries.COMMUNITY_TOTALS, communities=limit)
+        rows = database.run(queries.BRIDGING, limit=limit)
+        by_id = {r["communityId"]: r for r in rows}
+
+        out = []
+        for t in totals:
+            r = by_id.get(t["communityId"], {})
+            external = r.get("externalTies", 0) or 0
+            top10 = r.get("top10Ties", 0) or 0
+            out.append({
+                "communityId": t["communityId"],
+                "members": t["members"],
+                "films": t["films"],
+                "externalTies": external,
+                "top10Ties": top10,
+                "top10Share": (top10 / external) if external else 0.0,
+                "tiesPerMember": (external / t["members"]) if t["members"] else 0.0,
+            })
+        return out
+
+    return cached("bridging:%d" % limit, compute)
+
+
+@app.get("/api/analytics/genres")
+def genres(communities: int = Query(8, ge=2, le=20),
+           top: int = Query(10, ge=3, le=20)):
+
+
+    def compute():
+        totals = database.run(queries.COMMUNITY_TOTALS, communities=communities)
+        rows = database.run(queries.GENRE_MATRIX, communities=communities)
+
+        po_zanru = {}
+        for r in rows:
+            po_zanru.setdefault(r["genre"], {})[r["communityId"]] = r["films"]
+
+        redoslijed = sorted(po_zanru,
+                            key=lambda g: sum(po_zanru[g].values()),
+                            reverse=True)[:top]
+
+        return {
+            "communities": totals,
+            "genres": [
+                {
+                    "genre": g,
+                    "counts": po_zanru[g],
+                    "total": sum(po_zanru[g].values()),
+                }
+                for g in redoslijed
+            ],
+        }
+
+    return cached("genres:%d:%d" % (communities, top), compute)
+
+
+@app.get("/api/analytics/spread")
+def spread():
+    def compute():
+        out = []
+        for measure in ("degree", "pageRank", "betweenness", "closeness"):
+            rows = database.run(queries.CENTRALITY, measure=measure, limit=20)
+            kljuc = {"degree": "degree", "pageRank": "pageRank",
+                     "betweenness": "betweenness", "closeness": "closeness"}[measure]
+            vrijednosti = [r[kljuc] for r in rows if r[kljuc] is not None]
+            if not vrijednosti:
+                continue
+            vrh, dno = max(vrijednosti), min(vrijednosti)
+            out.append({
+                "measure": measure,
+                "top": vrh,
+                "bottom": dno,
+                "spread": ((vrh - dno) / dno) if dno else 0.0,
+                "values": vrijednosti,
+            })
+        return out
+
+    return cached("spread", compute)
+
+
+@app.get("/api/analytics/compare")
+def compare(a: str = Query("degree"), b: str = Query("betweenness"),
+            limit: int = Query(12, ge=5, le=25)):
+    allowed = ["degree", "pageRank", "betweenness", "closeness"]
+    for m in (a, b):
+        if m not in allowed:
+            raise HTTPException(status_code=400,
+                                detail="Mjera mora biti jedna od: " + ", ".join(allowed))
+
+    rows_a = database.run(queries.CENTRALITY, measure=a, limit=limit)
+    rows_b = database.run(queries.CENTRALITY, measure=b, limit=limit)
+
+    unija = {}
+    for r in rows_a + rows_b:
+        unija[r["personId"]] = r
+    ljudi = list(unija.values())
+
+    def poredak(mjera):
+        redom = sorted(ljudi, key=lambda r: r[mjera] or 0, reverse=True)
+        return {r["personId"]: i + 1 for i, r in enumerate(redom)}
+
+    rank_a, rank_b = poredak(a), poredak(b)
+
+    return {
+        "a": a,
+        "b": b,
+        "people": sorted(
+            [
+                {
+                    "personId": r["personId"],
+                    "name": r["name"],
+                    "communityId": r["communityId"],
+                    "rankA": rank_a[r["personId"]],
+                    "rankB": rank_b[r["personId"]],
+                    "valueA": r[a],
+                    "valueB": r[b],
+                    "inA": any(x["personId"] == r["personId"] for x in rows_a),
+                    "inB": any(x["personId"] == r["personId"] for x in rows_b),
+                }
+                for r in ljudi
+            ],
+            key=lambda p: p["rankA"],
+        ),
+    }
+
+
+@app.get("/api/analytics/bridge-cutoff")
+def bridge_cutoff():
+    def compute():
+        row = database.run_one(queries.BRIDGE_CUTOFF)
+        return {"cutoff": (row or {}).get("cutoff") or 0.0}
+
+    return cached("cutoff", compute)
+
+
+@app.get("/api/movies/{movie_id}/why")
+def why_not(movie_id: str, candidate: str = Query(...)):
+    row = database.run_one(queries.WHY_NOT,
+                           movieId=movie_id, candidateId=candidate,
+                           w=WEIGHTS, minVotes=MIN_VOTES, minRating=MIN_RATING)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Film nije pronadjen")
+    return row
