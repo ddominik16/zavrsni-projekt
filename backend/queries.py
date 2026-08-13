@@ -304,3 +304,149 @@ RETURN p.personId AS personId, p.name AS name,
 ORDER BY p.pageRank DESC
 LIMIT $limit
 """
+
+
+# ---------------------------------------------------- zanr po zajednici
+#
+# Koliko filmova svakog zanra pripada svakoj od najvecih zajednica.
+# Film nasljedjuje zajednicu od svoje glumacke ekipe (faza 6, korak 7).
+
+GENRE_MATRIX = """
+MATCH (p:Person)
+WHERE p.communityId IS NOT NULL
+WITH p.communityId AS cid, count(*) AS members
+ORDER BY members DESC
+LIMIT $communities
+WITH collect(cid) AS ids
+MATCH (m:Movie)-[:BELONGS_TO_GENRE]->(g:Genre)
+WHERE m.communityId IN ids
+RETURN g.name AS genre, m.communityId AS communityId,
+       count(DISTINCT m) AS films
+"""
+
+COMMUNITY_TOTALS = """
+MATCH (p:Person)
+WHERE p.communityId IS NOT NULL
+WITH p.communityId AS cid, count(*) AS members
+ORDER BY members DESC
+LIMIT $communities
+CALL {
+  WITH cid
+  MATCH (m:Movie {communityId: cid})
+  RETURN count(m) AS films
+}
+RETURN cid AS communityId, members, films
+ORDER BY members DESC
+"""
+
+# ------------------------------------------------------------- posrednistvo
+#
+# Koliki dio ukupnih vanjskih veza jedne zajednice nose njenih deset
+# najpovezanijih ljudi. Ovo je glavni nalaz rada: indijska zajednica ima
+# malo vanjskih veza i one su skoncentrirane u sacici ljudi, dok su
+# hollywoodske raspodijeljene po svima i zato zamjenjive.
+#
+# Upit prolazi kroz sve veze suradnje najvecih zajednica pa traje nekoliko
+# sekundi. Rezultat se ne mijenja, zato ga backend zapamti nakon prvog
+# racunanja.
+
+BRIDGING = """
+MATCH (p:Person)
+WHERE p.communityId IS NOT NULL
+WITH p.communityId AS cid, count(*) AS members
+ORDER BY members DESC
+LIMIT $limit
+WITH collect(cid) AS ids
+
+MATCH (a:Person)-[:COLLABORATED_WITH]-(b:Person)
+WHERE a.communityId IN ids
+  AND b.communityId IS NOT NULL
+  AND b.communityId <> a.communityId
+WITH a.communityId AS cid, a, count(DISTINCT b) AS ext
+ORDER BY cid, ext DESC
+WITH cid, collect(ext) AS exts
+RETURN cid AS communityId,
+       reduce(s = 0, x IN exts | s + x)         AS externalTies,
+       reduce(s = 0, x IN exts[0..10] | s + x)  AS top10Ties,
+       size(exts)                               AS peopleWithExternal
+"""
+
+# Granica iznad koje osobu smatramo posrednikom: gornji postotak po
+# betweennessu. Racuna se jednom pa se pamti.
+BRIDGE_CUTOFF = """
+MATCH (p:Person)
+WHERE p.betweennessCentrality > 0
+RETURN percentileCont(p.betweennessCentrality, 0.99) AS cutoff
+"""
+
+# ------------------------------------------------------------ zasto ne ovaj
+#
+# Isti racun kao u RECOMMEND, ali za jedan konkretan film koji je korisnik
+# odabrao. Vraca i rezultat i sve uvjete koje film mora proci, da se vidi
+# gdje je tocno ispao.
+
+WHY_NOT = """
+MATCH (t:Movie {movieId: $movieId}), (c:Movie {movieId: $candidateId})
+
+OPTIONAL MATCH (t)-[sim:SIMILAR_TO]->(c)
+WITH t, c, coalesce(sim.score, 0.0) AS gdsScore
+
+WITH t, c, gdsScore,
+     size([(t)<-[:ACTED_IN]-(p:Person)-[:ACTED_IN]->(c)   | p]) AS sharedActors,
+     size([(t)<-[:DIRECTED]-(d:Person)-[:DIRECTED]->(c)   | d]) AS sharedDirectors,
+     size([(t)-[:BELONGS_TO_GENRE]->(g:Genre)<-[:BELONGS_TO_GENRE]-(c) | g]) AS sharedGenres,
+     size([(t)-[:BELONGS_TO_GENRE]->(g1:Genre) | g1])            AS genresT,
+     size([(t)-[:WON_AWARD]->(a:Award)<-[:WON_AWARD]-(c) | a])   AS sharedAwards
+
+WITH t, c, gdsScore, sharedActors, sharedDirectors, sharedGenres,
+     genresT, sharedAwards,
+     CASE WHEN sharedActors >= 2 OR sharedDirectors > 0 OR gdsScore > 0
+          THEN 1 ELSE 2 END AS tier
+
+WITH t, c, gdsScore, sharedActors, sharedDirectors, sharedGenres,
+     sharedAwards, tier,
+     CASE WHEN genresT > 0 THEN sharedGenres * 1.0 / genresT ELSE 0.0 END AS nGenre,
+     CASE WHEN sharedDirectors > 0 THEN 1.0 ELSE 0.0 END                  AS nDirector,
+     CASE WHEN sharedActors >= 5 THEN 1.0 ELSE sharedActors / 5.0 END     AS nActor,
+     gdsScore                                                             AS nGds,
+     c.rating / 10.0                                                      AS nQuality,
+     CASE WHEN c.votes >= 1000000 THEN 1.0 ELSE log10(c.votes) / 6.0 END  AS nPopularity,
+     CASE WHEN t.year IS NULL OR c.year IS NULL THEN 0.0
+          ELSE 1.0 - abs(t.year - c.year) / 50.0 END                      AS nRecency,
+     CASE WHEN t.communityId IS NOT NULL AND t.communityId = c.communityId
+          THEN 1.0 ELSE 0.0 END                                           AS nCommunity,
+     CASE WHEN sharedAwards >= 2 THEN 1.0 ELSE sharedAwards / 2.0 END     AS nAward
+
+RETURN c.movieId AS movieId, c.title AS title, c.year AS year,
+       c.rating AS rating, c.votes AS votes,
+       coalesce(c.communityId, -1) AS communityId,
+       tier, sharedActors, sharedDirectors, sharedGenres, sharedAwards,
+       nGenre AS genreCoverage,
+       CASE WHEN tier = 1
+            THEN nGenre     * $w.genre
+               + nDirector  * $w.director
+               + nActor     * $w.actor
+               + nGds       * $w.gds
+               + nQuality   * $w.rating
+               + nCommunity * $w.community
+               + nAward     * $w.award
+            ELSE nGenre      * 0.40
+               + nQuality    * 0.35
+               + nPopularity * 0.15
+               + nRecency    * 0.10
+       END AS score,
+       {
+         genre: nGenre * $w.genre, director: nDirector * $w.director,
+         actor: nActor * $w.actor, gds: nGds * $w.gds,
+         quality: nQuality * $w.rating, community: nCommunity * $w.community,
+         award: nAward * $w.award
+       } AS signals,
+       {
+         votes:  c.votes  >= $minVotes,
+         rating: c.rating >= $minRating,
+         floor:  tier = 1 OR nGenre >= 0.5,
+         candidate: sharedActors > 0 OR sharedDirectors > 0 OR gdsScore > 0
+                    OR (sharedGenres >= 2 AND c.votes >= 50000
+                        AND c.rating >= 6.5 AND abs(c.year - t.year) <= 15)
+       } AS gates
+"""
