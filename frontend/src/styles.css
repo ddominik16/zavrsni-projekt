@@ -1,0 +1,1037 @@
+:root {
+  --ground: #e7e8e1;
+  --surface: #f4f5ef;
+  --surface-2: #dddfd5;
+  --ink: #131711;
+  --ink-2: #454c41;
+  --muted: #767d70;
+  --rule: #c8cbbf;
+  --rule-soft: #d8dad0;
+
+  --petrol: #10514e;
+  --petrol-ink: #f4f5ef;
+  --mustard: #c89b1e;
+  --brick: #a8391f;
+
+  --rail: 88px;
+  --fs-xs: 11px;
+  --fs-sm: 12.5px;
+  --fs-base: 14px;
+  --fs-md: 16px;
+  --fs-lg: 21px;
+  --fs-xl: 30px;
+  --fs-2xl: 46px;
+  --fs-3xl: 76px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  font-size: var(--fs-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+input {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--mustard);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------- lijeva traka */
+
+.rail {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--rail);
+  background: var(--petrol);
+  color: var(--petrol-ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0;
+  z-index: 40;
+}
+
+.rail__mark {
+  font-family: "Syne", sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  text-transform: uppercase;
+}
+
+.rail__meta {
+  font-family: "DM Mono", monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  writing-mode: vertical-rl;
+  opacity: 0.62;
+  text-transform: uppercase;
+}
+
+.rail__dot {
+  width: 9px;
+  height: 9px;
+  background: var(--mustard);
+}
+
+/* ----------------------------------------------------------------- okvir */
+
+.shell {
+  margin-left: var(--rail);
+  min-height: 100vh;
+}
+
+.topbar {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--rule);
+  background: var(--ground);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.nav {
+  display: flex;
+}
+
+.nav__btn {
+  position: relative;
+  padding: 20px 26px 18px;
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 0.18s ease;
+}
+
+.nav__btn:hover {
+  color: var(--ink);
+}
+
+.nav__btn[aria-selected="true"] {
+  color: var(--ink);
+}
+
+.nav__btn[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  left: 26px;
+  right: 26px;
+  bottom: 0;
+  height: 5px;
+  background: var(--mustard);
+}
+
+.topbar__right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 24px;
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.09em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px;
+  border: 1px solid var(--rule);
+}
+
+.pill__led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.pill__led--ok {
+  background: #5f6f33;
+}
+
+.pill__led--bad {
+  background: var(--brick);
+}
+
+.wrap {
+  max-width: 1240px;
+  padding: 0 40px 90px;
+}
+
+/* ------------------------------------------------------------- zaglavlja */
+
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  padding: 44px 0 22px;
+}
+
+.head__title {
+  font-family: "Syne", sans-serif;
+  font-weight: 800;
+  font-size: var(--fs-2xl);
+  line-height: 0.94;
+  letter-spacing: -0.025em;
+}
+
+.head__note {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  max-width: 44ch;
+  line-height: 1.6;
+}
+
+.eyebrow {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 11px;
+}
+
+/* ---------------------------------------------------------------- brojke */
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 2px solid var(--ink);
+  border-bottom: 1px solid var(--rule);
+}
+
+.fig {
+  padding: 24px 26px 26px;
+  border-right: 1px solid var(--rule-soft);
+}
+
+.fig:last-child {
+  border-right: none;
+}
+
+.fig__n {
+  font-family: "Syne", sans-serif;
+  font-weight: 700;
+  font-size: var(--fs-3xl);
+  line-height: 0.86;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.fig__l {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 14px;
+}
+
+.fig--accent .fig__n {
+  color: var(--petrol);
+}
+
+/* ---------------------------------------------------------------- paneli */
+
+.grid {
+  display: grid;
+  gap: 28px;
+  margin-top: 34px;
+}
+
+.grid--2 {
+  grid-template-columns: 1.15fr 0.85fr;
+}
+
+.grid--recs {
+  grid-template-columns: 340px 1fr;
+  align-items: start;
+}
+
+.grid--net {
+  grid-template-columns: 1fr 316px;
+  align-items: start;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+}
+
+.panel__hd {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.panel__t {
+  font-weight: 600;
+  font-size: var(--fs-md);
+}
+
+.panel__sub {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+.panel__bd {
+  padding: 8px 20px 18px;
+}
+
+.panel__bd--flush {
+  padding: 0;
+}
+
+/* ------------------------------------------------------------ rang liste */
+
+.rank__row {
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.rank__row:last-child {
+  border-bottom: none;
+}
+
+.rank__i {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.rank__mid {
+  display: block;
+}
+
+.rank__name {
+  display: block;
+  font-weight: 500;
+}
+
+.rank__val {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  min-width: 76px;
+}
+
+.meter {
+  display: block;
+  height: 7px;
+  background: var(--surface-2);
+  position: relative;
+  margin-top: 6px;
+}
+
+.meter__f {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--petrol);
+}
+
+.meter__f--brick {
+  background: var(--brick);
+}
+
+/* --------------------------------------------------------------- zajednice */
+
+.comm__row {
+  display: grid;
+  grid-template-columns: 14px 1fr 62px 58px;
+  gap: 13px;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.comm__row:last-child {
+  border-bottom: none;
+}
+
+.comm__swatch {
+  width: 14px;
+  height: 14px;
+}
+
+.comm__n {
+  font-weight: 500;
+}
+
+.comm__num,
+.comm__yr {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-sm);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.comm__num {
+  color: var(--ink-2);
+}
+
+.comm__yr {
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------------ parovi */
+
+.pairs {
+  margin-top: 28px;
+  border-top: 2px solid var(--ink);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.pair {
+  padding: 16px 22px 18px;
+  border-right: 1px solid var(--rule-soft);
+}
+
+.pair:last-child {
+  border-right: none;
+}
+
+.pair__names {
+  font-weight: 600;
+  font-size: var(--fs-md);
+  line-height: 1.3;
+}
+
+.pair__meta {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  margin-top: 7px;
+  letter-spacing: 0.05em;
+}
+
+.pair__n {
+  color: var(--brick);
+  font-weight: 500;
+}
+
+/* ---------------------------------------------------------------- pretraga */
+
+.search__field {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-bottom: 2px solid var(--ink);
+  padding: 14px 16px;
+  font-size: var(--fs-md);
+  color: var(--ink);
+}
+
+.search__field::placeholder {
+  color: var(--muted);
+}
+
+.filmlist {
+  margin-top: 14px;
+}
+
+.filmbtn {
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--rule-soft);
+  display: block;
+  width: 100%;
+  transition: background 0.15s ease;
+}
+
+.filmbtn:hover {
+  background: var(--surface);
+}
+
+.filmbtn.is-sel {
+  background: var(--petrol);
+  color: var(--petrol-ink);
+}
+
+.filmbtn__t {
+  display: block;
+  font-weight: 600;
+}
+
+.filmbtn__m {
+  display: block;
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  margin-top: 3px;
+  letter-spacing: 0.05em;
+}
+
+.filmbtn.is-sel .filmbtn__m {
+  color: var(--petrol-ink);
+  opacity: 0.72;
+}
+
+/* -------------------------------------------------------------- odabrani film */
+
+.target {
+  background: var(--ink);
+  color: var(--ground);
+  padding: 26px 28px 28px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 26px;
+}
+
+.target__t {
+  font-family: "Syne", sans-serif;
+  font-weight: 800;
+  font-size: var(--fs-xl);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+}
+
+.target__m {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-sm);
+  opacity: 0.7;
+  margin-top: 9px;
+  letter-spacing: 0.06em;
+}
+
+.target__badge {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  padding: 6px 11px;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------- razine */
+
+.tier {
+  margin-top: 26px;
+}
+
+.tier__hd {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 11px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.tier__block {
+  width: 16px;
+  height: 16px;
+  background: var(--petrol);
+}
+
+.tier__block--2 {
+  background: var(--mustard);
+}
+
+.tier__t {
+  font-weight: 700;
+  font-size: var(--fs-md);
+}
+
+.tier__c {
+  margin-left: auto;
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+.rec {
+  display: grid;
+  grid-template-columns: 30px 1fr 120px 92px;
+  gap: 16px;
+  align-items: center;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.rec__i {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.rec__mid {
+  display: block;
+}
+
+.rec__t {
+  display: block;
+  font-weight: 600;
+  font-size: var(--fs-md);
+  line-height: 1.25;
+}
+
+.rec__why {
+  display: block;
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  margin-top: 4px;
+  letter-spacing: 0.04em;
+}
+
+.rec__meta {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.rec__score {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-md);
+  font-weight: 500;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- signali */
+
+.signals {
+  margin-top: 26px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.signals__hd {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.signals__bd {
+  padding: 20px;
+}
+
+.sigbar {
+  display: flex;
+  height: 34px;
+  border: 1px solid var(--ink);
+}
+
+.siglegend {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px 26px;
+  margin-top: 16px;
+}
+
+.sigitem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: var(--fs-sm);
+}
+
+.sigitem__sw {
+  width: 11px;
+  height: 11px;
+  flex: none;
+}
+
+.sigitem__l {
+  color: var(--ink-2);
+}
+
+.sigitem__v {
+  margin-left: auto;
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ----------------------------------------------------------------- mreza */
+
+.netwrap {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  position: relative;
+}
+
+.net__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: grab;
+}
+
+.net__node {
+  cursor: pointer;
+}
+
+.net__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px 20px;
+  padding: 15px 20px;
+  border-top: 1px solid var(--rule);
+}
+
+.legitem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.05em;
+  color: var(--ink-2);
+}
+
+.legitem__sw {
+  width: 10px;
+  height: 10px;
+}
+
+.inspect {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+}
+
+.inspect__hd {
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.inspect__nm {
+  font-family: "Syne", sans-serif;
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+}
+
+.inspect__c {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  margin-top: 6px;
+  letter-spacing: 0.07em;
+}
+
+.stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.stat:last-child {
+  border-bottom: none;
+}
+
+.stat__l {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.stat__v {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-base);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat__v--brick {
+  color: var(--brick);
+  font-weight: 500;
+}
+
+.inspect__films {
+  padding: 14px 18px;
+  border-top: 1px solid var(--rule);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  line-height: 1.7;
+}
+
+.btn {
+  display: inline-block;
+  margin: 14px 18px 18px;
+  padding: 9px 14px;
+  background: var(--petrol);
+  color: var(--petrol-ink);
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.btn:hover {
+  background: var(--ink);
+}
+
+/* --------------------------------------------------------------- tablice */
+
+.tblwrap {
+  overflow-x: auto;
+}
+
+.tbl {
+  font-variant-numeric: tabular-nums;
+  min-width: 660px;
+}
+
+.tbl thead th {
+  text-align: right;
+  padding: 11px 14px;
+  border-bottom: 2px solid var(--ink);
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.tbl thead th:first-child {
+  text-align: left;
+}
+
+.tbl thead th button {
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+}
+
+.tbl thead th button:hover {
+  color: var(--ink);
+}
+
+.tbl thead th.is-sorted button {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.tbl tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rule-soft);
+  text-align: right;
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-sm);
+}
+
+.tbl tbody td:first-child {
+  text-align: left;
+  font-family: "Archivo", sans-serif;
+  font-size: var(--fs-base);
+  font-weight: 500;
+}
+
+.tbl tbody tr:hover td {
+  background: var(--surface-2);
+}
+
+.hi {
+  color: var(--brick);
+  font-weight: 500;
+}
+
+/* ------------------------------------------------------------- napomene */
+
+.note {
+  margin-top: 26px;
+  padding: 18px 22px;
+  border-left: 5px solid var(--mustard);
+  background: var(--surface);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  max-width: 78ch;
+  line-height: 1.62;
+}
+
+.state {
+  padding: 40px 0;
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.state--error {
+  color: var(--brick);
+}
+
+.chip {
+  padding: 8px 13px;
+  background: var(--surface-2);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.chip--bridge {
+  background: var(--brick);
+  color: #f7f4ee;
+}
+
+.chip--end {
+  background: var(--ink);
+  color: var(--ground);
+}
+
+.pathrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+}
+
+.arrow {
+  color: var(--muted);
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-sm);
+}
+
+.pathform {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.pathform input {
+  flex: 1;
+  min-width: 180px;
+  background: var(--ground);
+  border: 1px solid var(--rule);
+  padding: 10px 12px;
+  color: var(--ink);
+}
+
+.pathform button {
+  padding: 10px 18px;
+  background: var(--ink);
+  color: var(--ground);
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* -------------------------------------------------------------- responsive */
+
+@media (max-width: 1080px) {
+  .grid--2,
+  .grid--recs,
+  .grid--net {
+    grid-template-columns: 1fr;
+  }
+  .figures {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .fig {
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .pairs {
+    grid-template-columns: 1fr;
+  }
+  .pair {
+    border-right: none;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .siglegend {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 680px) {
+  :root {
+    --rail: 54px;
+    --fs-2xl: 32px;
+    --fs-3xl: 50px;
+  }
+  .wrap {
+    padding: 0 20px 60px;
+  }
+  .figures {
+    grid-template-columns: 1fr;
+  }
+  .rec {
+    grid-template-columns: 24px 1fr 74px;
+    gap: 10px;
+  }
+  .rec__meta {
+    display: none;
+  }
+  .nav__btn {
+    padding: 16px 14px;
+  }
+  .nav__btn[aria-selected="true"]::after {
+    left: 14px;
+    right: 14px;
+  }
+}
