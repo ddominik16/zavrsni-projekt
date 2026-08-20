@@ -1,10 +1,18 @@
 import { useMemo } from "react";
-import { getStats, getCommunities, getCentrality, getTopPairs } from "../api.js";
+import {
+  getStats,
+  getCommunities,
+  getCentrality,
+  getTopPairs,
+  getDecades,
+} from "../api.js";
 import useFetch from "../useFetch.js";
 import Panel from "../components/Panel.jsx";
 import RankList from "../components/RankList.jsx";
 import { Loading, ErrorBox } from "../components/States.jsx";
+import { ColumnChart } from "../components/charts.jsx";
 import { buildColorMap, colorFor } from "../colors.js";
+import { zajednica, OZNAKE_VRSTA } from "../communities.js";
 import { formatNumber } from "../format.js";
 
 export default function Overview() {
@@ -12,6 +20,7 @@ export default function Overview() {
   const communities = useFetch(() => getCommunities(8), []);
   const degree = useFetch(() => getCentrality("degree", 8), []);
   const pairs = useFetch(() => getTopPairs(3), []);
+  const decades = useFetch(() => getDecades(), []);
 
   const colorMap = useMemo(() => {
     if (!communities.data) return new Map();
@@ -48,6 +57,24 @@ export default function Overview() {
         </div>
       )}
 
+      <div className="grid">
+        <Panel title="Filmovi po desetljećima" sub="godina izlaska">
+          {decades.loading ? (
+            <Loading />
+          ) : decades.error ? (
+            <ErrorBox message={decades.error} />
+          ) : (
+            <ColumnChart
+              data={decades.data}
+              xKey="decade"
+              yKey="films"
+              unit="filmova"
+              xLabel="Broj filmova po desetljecu"
+            />
+          )}
+        </Panel>
+      </div>
+
       <div className="grid grid--2">
         <Panel title="Najveće zajednice" sub="Louvain">
           {communities.loading ? (
@@ -55,17 +82,32 @@ export default function Overview() {
           ) : communities.error ? (
             <ErrorBox message={communities.error} />
           ) : (
-            communities.data.map((c) => (
-              <div className="comm__row" key={c.communityId}>
-                <span
-                  className="comm__swatch"
-                  style={{ background: colorFor(colorMap, c.communityId) }}
-                />
-                <span className="comm__n">Zajednica {c.communityId}</span>
-                <span className="comm__num">{formatNumber(c.members)}</span>
-                <span className="comm__yr">{c.medianYear || "—"}</span>
-              </div>
-            ))
+            communities.data.map((c) => {
+              const z = zajednica(c.communityId);
+              return (
+                <div className="comm__row" key={c.communityId}>
+                  <span
+                    className="comm__swatch"
+                    style={{ background: colorFor(colorMap, c.communityId) }}
+                  />
+                  <span className="comm__n">
+                    {z.naziv ? (
+                      <>
+                        <span className="commname">{z.naziv}</span>
+                        <span className="commid">{c.communityId}</span>
+                      </>
+                    ) : (
+                      <span className="commname">Zajednica {c.communityId}</span>
+                    )}
+                    {OZNAKE_VRSTA[z.vrsta] ? (
+                      <span className="commbadge">{OZNAKE_VRSTA[z.vrsta]}</span>
+                    ) : null}
+                  </span>
+                  <span className="comm__num">{formatNumber(c.members)}</span>
+                  <span className="comm__yr">{c.medianYear || "—"}</span>
+                </div>
+              );
+            })
           )}
         </Panel>
 
@@ -86,6 +128,13 @@ export default function Overview() {
         </Panel>
       </div>
 
+      <div className="note">
+        Nazivi zajednica nisu u bazi. Louvain vraća samo brojeve; nazive sam
+        dodao ručno, nakon pregleda najpoznatijih članova i medijana godine.
+        Zato uz svaki naziv stoji i broj — broj je izračunat, naziv je
+        pročitan iz njega.
+      </div>
+
       {pairs.data && pairs.data.length > 0 ? (
         <div className="pairs">
           {pairs.data.map((p) => (
@@ -104,7 +153,7 @@ export default function Overview() {
 
       <div className="note">
         Zadnja godina suradnje za parove poput Rathbonea i Brucea odgovara
-        povijesnom zapisu, sto je koristeno kao provjera ispravnosti uvoza.
+        povijesnom zapisu, što je korišteno kao provjera ispravnosti uvoza.
       </div>
     </>
   );
