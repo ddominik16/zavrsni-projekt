@@ -22,11 +22,13 @@ function HealthPill() {
 
   const ok = data && data.database === "ok";
   const cls = error || !ok ? "pill__led pill__led--bad" : "pill__led pill__led--ok";
+  const tekst = error || !ok ? "baza nedostupna" : "bolt://localhost:7687";
 
+  // Na uskim ekranima ostaje samo lampica, inace traka ne stane uz izbornik.
   return (
-    <span className="pill">
+    <span className="pill" title={tekst}>
       <span className={data || error ? cls : "pill__led"} />
-      {error || !ok ? "baza nedostupna" : "bolt://localhost:7687"}
+      <span className="pill__txt">{tekst}</span>
     </span>
   );
 }
@@ -46,21 +48,23 @@ export default function App() {
 
       <div className="shell">
         <div className="topbar">
-          <div className="nav" role="tablist" aria-label="Sekcije">
-            {PAGES.map((p) => (
-              <button
-                key={p.id}
-                className="nav__btn"
-                role="tab"
-                aria-selected={p.id === active}
-                onClick={() => setActive(p.id)}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-          <div className="topbar__right">
-            <HealthPill />
+          <div className="topbar__inner">
+            <div className="nav" role="tablist" aria-label="Sekcije">
+              {PAGES.map((p) => (
+                <button
+                  key={p.id}
+                  className="nav__btn"
+                  role="tab"
+                  aria-selected={p.id === active}
+                  onClick={() => setActive(p.id)}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <div className="topbar__right">
+              <HealthPill />
+            </div>
           </div>
         </div>
 

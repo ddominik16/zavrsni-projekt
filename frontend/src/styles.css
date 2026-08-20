@@ -14,6 +14,9 @@
   --brick: #a8391f;
 
   --rail: 88px;
+  --col: 1440px; /* sirina stupca sa sadrzajem */
+  --gut: 40px; /* razmak od ruba stupca do teksta */
+
   --fs-xs: 11px;
   --fs-sm: 12.5px;
   --fs-base: 14px;
@@ -123,8 +126,6 @@ input {
 }
 
 .topbar {
-  display: flex;
-  align-items: stretch;
   border-bottom: 1px solid var(--rule);
   background: var(--ground);
   position: sticky;
@@ -132,8 +133,28 @@ input {
   z-index: 30;
 }
 
+/* Crta ide preko cijele sirine, ali sadrzaj trake stoji u istom stupcu
+   kao i sadrzaj stranice ispod nje. */
+.topbar__inner {
+  max-width: var(--col);
+  margin: 0 auto;
+  padding: 0 var(--gut);
+  display: flex;
+  align-items: stretch;
+  /* sigurnosna mreza: gumbi radije kliznu nego da razvuku cijelu stranicu */
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.topbar__inner::-webkit-scrollbar {
+  display: none;
+}
+
 .nav {
   display: flex;
+  /* gumb ima svojih 26px paddinga, pa ga povucem natrag da tekst prvog
+     gumba stoji tocno na rubu stupca */
+  margin-left: -26px;
 }
 
 .nav__btn {
@@ -170,7 +191,7 @@ input {
   display: flex;
   align-items: center;
   gap: 18px;
-  padding: 0 24px;
+  padding-left: 24px;
   font-family: "DM Mono", monospace;
   font-size: var(--fs-xs);
   letter-spacing: 0.09em;
@@ -202,8 +223,9 @@ input {
 }
 
 .wrap {
-  max-width: 1240px;
-  padding: 0 40px 90px;
+  max-width: var(--col);
+  margin: 0 auto;
+  padding: 0 var(--gut) 90px;
 }
 
 /* ------------------------------------------------------------- zaglavlja */
@@ -289,8 +311,17 @@ input {
   margin-top: 34px;
 }
 
+/* Stupac u gridu se po zadanom ne smije suziti ispod sirine svog sadrzaja,
+   pa bi ga tablica sa min-widthom razvukla i izgurala stranicu u stranu.
+   Ovime stupac smije biti uzi, a tablica onda klize unutar svog okvira. */
+.grid > * {
+  min-width: 0;
+}
+
 .grid--2 {
   grid-template-columns: 1.15fr 0.85fr;
+  /* bez ovoga se nizi panel rasteze na visinu viseg i ostane prazan prostor */
+  align-items: start;
 }
 
 .grid--recs {
@@ -312,7 +343,9 @@ input {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 14px;
+  gap: 4px 14px;
+  /* na uskim ekranima podnaslov padne u drugi red umjesto da razvuce panel */
+  flex-wrap: wrap;
   padding: 15px 20px;
   border-bottom: 1px solid var(--rule);
 }
@@ -400,11 +433,17 @@ input {
 
 .comm__row {
   display: grid;
-  grid-template-columns: 14px 1fr 62px 58px;
+  grid-template-columns: 14px minmax(0, 1fr) 62px 58px;
   gap: 13px;
   align-items: center;
   padding: 9px 0;
   border-bottom: 1px solid var(--rule-soft);
+}
+
+/* naziv zajednice zna biti dug, pa se lomi umjesto da gura godinu van */
+.comm__n {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .comm__row:last-child {
@@ -1008,14 +1047,32 @@ input {
   }
 }
 
+/* Ispod ove sirine adresa baze vise ne stane uz izbornik, pa ostaje
+   samo lampica; puni tekst je u title atributu. */
+@media (max-width: 900px) {
+  .pill__txt {
+    display: none;
+  }
+  .pill {
+    padding: 5px 7px;
+  }
+  .topbar__right {
+    padding-left: 14px;
+  }
+}
+
 @media (max-width: 680px) {
   :root {
     --rail: 54px;
+    --gut: 20px;
     --fs-2xl: 32px;
     --fs-3xl: 50px;
   }
   .wrap {
-    padding: 0 20px 60px;
+    padding-bottom: 60px;
+  }
+  .nav {
+    margin-left: -14px;
   }
   .figures {
     grid-template-columns: 1fr;
