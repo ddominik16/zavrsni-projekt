@@ -940,6 +940,94 @@ input {
   font-weight: 500;
 }
 
+/* ------------------------------------------------- kartice za izbor mjere */
+
+.measures {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  margin-top: 30px;
+}
+
+.measure {
+  display: block;
+  text-align: left;
+  background: var(--surface);
+  padding: 15px 18px 17px;
+  border-top: 3px solid transparent;
+  transition: background 0.15s ease;
+}
+
+.measure:hover {
+  background: var(--surface-2);
+}
+
+.measure.is-on {
+  border-top-color: var(--mustard);
+  background: var(--surface);
+}
+
+.measure__n {
+  display: block;
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.measure.is-on .measure__n {
+  color: var(--ink);
+}
+
+.measure__d {
+  display: block;
+  margin-top: 9px;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+/* ---------------------------------------------------------------- pojmovi */
+
+.secthd {
+  font-family: "Syne", sans-serif;
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  letter-spacing: -0.015em;
+  margin-top: 46px;
+}
+
+.defs {
+  margin-top: 14px;
+  border-top: 2px solid var(--ink);
+}
+
+.def {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 24px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.def__t {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding-top: 3px;
+}
+
+.def__d {
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  line-height: 1.62;
+  max-width: 76ch;
+}
+
 /* ------------------------------------------------------------- napomene */
 
 .note {
@@ -1045,6 +1133,9 @@ input {
   .siglegend {
     grid-template-columns: repeat(2, 1fr);
   }
+  .measures {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* Ispod ove sirine adresa baze vise ne stane uz izbornik, pa ostaje
@@ -1091,4 +1182,421 @@ input {
     left: 14px;
     right: 14px;
   }
+  .measures {
+    grid-template-columns: 1fr;
+  }
+  .def {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+/* ------------------------------------------------------------- grafika */
+
+.chart {
+  position: relative;
+  margin-top: 6px;
+}
+
+.chart__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.tip {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  margin-top: -10px;
+  background: var(--ink);
+  color: var(--surface);
+  padding: 7px 10px;
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.tip__t {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.tip__l {
+  font-family: "DM Mono", monospace;
+  opacity: 0.82;
+}
+
+/* vodoravni stupci */
+
+.barrow__r {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.1fr) 2fr 92px;
+  align-items: center;
+  gap: 14px;
+  padding: 7px 0;
+}
+
+.barrow__l {
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+}
+
+.barrow__s {
+  display: block;
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+.barrow__track {
+  height: 12px;
+  background: var(--surface-2);
+}
+
+.barrow__fill {
+  height: 100%;
+  border-radius: 0 3px 3px 0;
+}
+
+.barrow__v {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-sm);
+  text-align: right;
+}
+
+/* raspon mjera */
+
+.spread {
+  display: grid;
+  grid-template-columns: 130px 1fr 74px;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.spread:last-of-type {
+  border-bottom: 0;
+}
+
+.spread__l {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.spread__track {
+  position: relative;
+  height: 20px;
+  background: var(--surface-2);
+}
+
+.spread__span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(13, 145, 134, 0.16);
+}
+
+.spread__tick {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--ink);
+  opacity: 0.72;
+}
+
+.spread__v {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-sm);
+  text-align: right;
+}
+
+/* toplinska karta */
+
+.heat {
+  min-width: 620px;
+  font-size: var(--fs-sm);
+}
+
+.heat th {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 400;
+  text-align: center;
+  padding: 8px 6px;
+  white-space: nowrap;
+}
+
+.heat th[scope="row"] {
+  text-align: left;
+  color: var(--ink);
+  padding-left: 20px;
+  padding-right: 14px;
+}
+
+.heat td {
+  text-align: center;
+  padding: 9px 6px;
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  color: var(--ink);
+  border: 2px solid var(--surface);
+}
+
+/* oznaka vrste zajednice */
+
+.commbadge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px;
+  border: 1px solid var(--rule);
+  font-family: "DM Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  vertical-align: 1px;
+}
+
+.commname {
+  font-size: var(--fs-sm);
+}
+
+.commid {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  margin-left: 6px;
+}
+
+@media (max-width: 680px) {
+  .barrow__r {
+    grid-template-columns: 1fr 68px;
+  }
+  .barrow__track {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+  .spread {
+    grid-template-columns: 100px 1fr 62px;
+    gap: 10px;
+  }
+}
+
+/* --------------------------------------------- podnaslovi i sitni gumbi */
+
+.secthd__sub {
+  margin-top: 8px;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  line-height: 1.6;
+  max-width: 78ch;
+  margin-bottom: 16px;
+}
+
+.linkbtn {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.linkbtn:hover {
+  color: var(--ink);
+}
+
+/* zajednica unutar celije tablice */
+
+.cellcomm {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.tbl .row--click {
+  cursor: pointer;
+}
+
+.tbl .row--click:hover {
+  background: var(--surface-2);
+}
+
+.tbl .row--on {
+  background: var(--surface-2);
+  cursor: pointer;
+}
+
+.tbl .row--on td:first-child {
+  box-shadow: inset 3px 0 0 var(--mustard);
+}
+
+/* ------------------------------------------------------- primjeri puteva */
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.presets__l {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-right: 4px;
+}
+
+.preset {
+  padding: 5px 10px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  color: var(--ink-2);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.preset:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.pathlegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 12px;
+}
+
+.legitem__sw--bridge {
+  background: var(--brick);
+}
+
+.legitem__sw--plain {
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+}
+
+.pathnote {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule-soft);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  line-height: 1.6;
+  max-width: 74ch;
+}
+
+/* ------------------------------------------------------ zasto ne ovaj film */
+
+.rec {
+  width: 100%;
+  text-align: left;
+}
+
+.rec--on {
+  background: var(--surface-2);
+  box-shadow: inset 3px 0 0 var(--mustard);
+}
+
+.whynot {
+  margin-top: 30px;
+}
+
+.verdict {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.verdict__t {
+  font-weight: 600;
+  font-size: var(--fs-md);
+}
+
+.verdict__y {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  margin-left: 6px;
+}
+
+.verdict__s {
+  font-family: "DM Mono", monospace;
+  font-size: var(--fs-lg);
+}
+
+.verdict__w {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.verdict__msg {
+  margin-top: 12px;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+.gates {
+  margin-top: 14px;
+  display: grid;
+  gap: 1px;
+  background: var(--rule-soft);
+  border: 1px solid var(--rule-soft);
+}
+
+.gate {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 12px;
+  background: var(--surface);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.gate__m {
+  font-family: "DM Mono", monospace;
+  width: 14px;
+  flex: none;
+  text-align: center;
+}
+
+.gate--ok .gate__m {
+  color: #4a6b2a;
+}
+
+.gate--no {
+  background: #f6ece8;
+}
+
+.gate--no .gate__m {
+  color: var(--brick);
+}
+
+.gate--no .gate__l {
+  font-weight: 600;
 }
