@@ -1,10 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
-import { searchPeople, getNetwork, getPerson, getPath } from "../api.js";
+import {
+  searchPeople,
+  getNetwork,
+  getPerson,
+  getPath,
+  getBridgeCutoff,
+} from "../api.js";
 import useFetch from "../useFetch.js";
 import NetworkGraph from "../components/NetworkGraph.jsx";
 import { Loading, ErrorBox, Empty } from "../components/States.jsx";
-import { buildColorMap, colorFor } from "../colors.js";
+import { buildColorMap, colorFor, PALETTE, OSTALO } from "../colors.js";
+import { zajednica, kratkoIme } from "../communities.js";
 import { formatNumber, formatDecimal } from "../format.js";
+
+// Parovi iz rada. Svi su poznati glumci s međunarodnim karijerama i kod
+// njih put ide oko posrednika, jer je zvijezda sama sebi most.
+const PRIMJERI = [
+  ["Shah Rukh Khan", "Nicolas Cage"],
+  ["Amitabh Bachchan", "Tom Hanks"],
+  ["Kemal Sunal", "Robert De Niro"],
+  ["Song Kang-ho", "Meryl Streep"],
+  ["Cem Yılmaz", "Julianne Moore"],
+];
 
 export default function Network() {
   const [query, setQuery] = useState("");
@@ -31,12 +48,18 @@ export default function Network() {
     Boolean(hovered || seedId)
   );
 
+  // Boje ima samo cetiri, pa ih dajem najbrojnijim zajednicama u ovom
+  // isjecku grafa. Ostale dijele neutralnu.
   const colorMap = useMemo(() => {
     if (!net.data) return new Map();
-    const ids = [];
+    const broj = new Map();
     net.data.nodes.forEach((n) => {
-      if (n.community !== null && !ids.includes(n.community)) ids.push(n.community);
+      if (n.community === null || n.community === undefined) return;
+      broj.set(n.community, (broj.get(n.community) || 0) + 1);
     });
+    const ids = [...broj.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([id]) => id);
     return buildColorMap(ids);
   }, [net.data]);
 
@@ -107,15 +130,24 @@ export default function Network() {
                     onHover={(n) => setHovered(n)}
                   />
                   <div className="net__legend">
-                    {[...colorMap.keys()].slice(0, 8).map((id) => (
+                    {[...colorMap.keys()].slice(0, PALETTE.length).map((id) => (
                       <span className="legitem" key={id}>
                         <span
                           className="legitem__sw"
                           style={{ background: colorFor(colorMap, id) }}
                         />
-                        zajednica {id}
+                        {kratkoIme(id)}
                       </span>
                     ))}
+                    {colorMap.size > PALETTE.length ? (
+                      <span className="legitem">
+                        <span
+                          className="legitem__sw"
+                          style={{ background: OSTALO }}
+                        />
+                        ostale zajednice
+                      </span>
+                    ) : null}
                   </div>
                 </>
               )}
@@ -144,7 +176,13 @@ function PersonCard({ person, onFocus }) {
     <>
       <div className="inspect__hd">
         <div className="inspect__nm">{person.name}</div>
-        <div className="inspect__c">zajednica: {person.communityId ?? "—"}</div>
+        <div className="inspect__c">
+          {person.communityId === null || person.communityId === undefined
+            ? "bez zajednice"
+            : (zajednica(person.communityId).naziv || "zajednica") +
+              " · " +
+              person.communityId}
+        </div>
       </div>
       <div className="stat">
         <span className="stat__l">Suradnika</span>
@@ -178,6 +216,12 @@ function PathFinder() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [ids, setIds] = useState(null);
+  const [greska, setGreska] = useState(null);
+
+  // Granicu za "posrednik" racuna baza (gornji postotak po betweennessu),
+  // da ne pise fiksan broj u kodu.
+  const cutoff = useFetch(() => getBridgeCutoff(), []);
+  const granica = cutoff.data ? cutoff.data.cutoff : Infinity;
 
   const path = useFetch(
     () => getPath(ids.from, ids.to),
@@ -185,15 +229,28 @@ function PathFinder() {
     Boolean(ids)
   );
 
-  async function submit(e) {
+  async function trazi(imeA, imeB) {
+    setGreska(null);
+    // Iz imena prvo dohvatimo personId, jer imena nisu jedinstvena.
+    const [a, b] = await Promise.all([searchPeople(imeA), searchPeople(imeB)]);
+    if (!a.length || !b.length) {
+      setGreska("Nisam našao " + (!a.length ? imeA : imeB) + " u bazi.");
+      setIds(null);
+      return;
+    }
+    setIds({ from: a[0].personId, to: b[0].personId });
+  }
+
+  function submit(e) {
     e.preventDefault();
     if (!from.trim() || !to.trim()) return;
-    // Iz imena prvo dohvatimo personId, jer imena nisu jedinstvena.
-    const [a, b] = await Promise.all([searchPeople(from), searchPeople(to)]);
-    if (a.length && b.length) {
-      setIds({ from: a[0].personId, to: b[0].personId });
-    }
+    trazi(from, to);
   }
+
+  const ljudi = path.data ? path.data.people : [];
+  const posrednici = ljudi.filter(
+    (p, i) => i > 0 && i < ljudi.length - 1 && p.betweenness >= granica
+  );
 
   return (
     <div className="panel" style={{ marginTop: 28 }}>
@@ -218,6 +275,25 @@ function PathFinder() {
           <button type="submit">Pronađi</button>
         </form>
 
+        <div className="presets">
+          <span className="presets__l">Primjeri iz rada:</span>
+          {PRIMJERI.map(([a, b]) => (
+            <button
+              key={a + b}
+              className="preset"
+              onClick={() => {
+                setFrom(a);
+                setTo(b);
+                trazi(a, b);
+              }}
+            >
+              {a} → {b}
+            </button>
+          ))}
+        </div>
+
+        {greska ? <ErrorBox message={greska} /> : null}
+
         {!ids ? null : path.loading ? (
           <Loading what="Trazim put" />
         ) : path.error ? (
@@ -225,16 +301,21 @@ function PathFinder() {
         ) : (
           <>
             <div className="pathrow">
-              {path.data.people.map((p, i) => (
+              {ljudi.map((p, i) => (
                 <span key={p.id} style={{ display: "contents" }}>
                   {i > 0 ? <span className="arrow">→</span> : null}
                   <span
                     className={
-                      i === 0 || i === path.data.people.length - 1
+                      i === 0 || i === ljudi.length - 1
                         ? "chip chip--end"
-                        : p.betweenness > 300000
+                        : p.betweenness >= granica
                         ? "chip chip--bridge"
                         : "chip"
+                    }
+                    title={
+                      zajednica(p.community).naziv
+                        ? zajednica(p.community).naziv + " · " + p.community
+                        : "zajednica " + p.community
                     }
                   >
                     {p.name}
@@ -242,11 +323,37 @@ function PathFinder() {
                 </span>
               ))}
             </div>
+
             <div className="pair__meta" style={{ marginTop: 14 }}>
-              {path.data.hops} koraka
+              {path.data.hops} koraka.{" "}
+              {posrednici.length ? (
+                <>
+                  Kroz {posrednici.length === 1 ? "posrednika" : "posrednike"}:{" "}
+                  <strong>{posrednici.map((p) => p.name).join(", ")}</strong>.
+                </>
+              ) : (
+                <>Nijedan međukorak nije u gornjem postotku po posredništvu.</>
+              )}
+            </div>
+
+            <div className="pathlegend">
+              <span className="legitem">
+                <span className="legitem__sw legitem__sw--bridge" />
+                posrednik — gornji postotak po betweennessu
+              </span>
+              <span className="legitem">
+                <span className="legitem__sw legitem__sw--plain" />
+                obična veza
+              </span>
             </div>
           </>
         )}
+
+        <div className="pathnote">
+          Zvijezde s međunarodnim karijerama obično zaobiđu posrednike jer su
+          same sebi most. Sporedni glumci bez inozemnih uloga nemaju izbora i
+          put im ide kroz nekoga tko spaja dvije kinematografije.
+        </div>
       </div>
     </div>
   );
