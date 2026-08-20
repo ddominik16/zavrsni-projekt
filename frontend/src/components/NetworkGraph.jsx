@@ -66,12 +66,49 @@ export default function NetworkGraph({
     [simNodes]
   );
 
+  // Natpisi znaju zavrsiti jedan preko drugoga kad su cvorovi blizu. Idemo
+  // redom od najvaznijeg i preskocimo svaki koji bi pao preko vec postavljenog.
+  // Sirina se procjenjuje iz broja znakova jer je font monospace.
+  const labels = useMemo(() => {
+    const kandidati = simNodes
+      .filter(
+        (n) => n.id === seedId || Math.max(0, n.degree || 0) > maxDegree * 0.55
+      )
+      .sort((a, b) => {
+        if (a.id === seedId) return -1;
+        if (b.id === seedId) return 1;
+        return (b.degree || 0) - (a.degree || 0);
+      });
+
+    const zauzeto = [];
+    const gotovi = [];
+
+    for (const n of kandidati) {
+      const seed = n.id === seedId;
+      const w = (n.name || "").length * 5.7;
+      // srediste dobiva natpis ispod sebe, ostali desno od cvora
+      const x = seed ? n.x - w / 2 : n.x + 13;
+      const y = seed ? n.y + 25 : n.y + 4;
+      const box = { x1: x - 2, y1: y - 10, x2: x + w + 2, y2: y + 4 };
+
+      const preklapa = zauzeto.some(
+        (p) => box.x1 < p.x2 && box.x2 > p.x1 && box.y1 < p.y2 && box.y2 > p.y1
+      );
+      if (preklapa) continue;
+
+      zauzeto.push(box);
+      gotovi.push({ id: n.id, name: n.name, x, y });
+    }
+
+    return gotovi;
+  }, [simNodes, seedId, maxDegree]);
+
   return (
     <svg
       className="net__svg"
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       role="img"
-      aria-label="Ego-mreza suradnje oko odabrane osobe"
+      aria-label="Ego-mreža suradnje oko odabrane osobe"
     >
       <g stroke="#131711" strokeOpacity="0.18">
         {simLinks.map((l, i) => {
@@ -114,26 +151,22 @@ export default function NetworkGraph({
         );
       })}
 
-      {simNodes
-        .filter(
-          (n) => n.id === seedId || Math.max(0, n.degree || 0) > maxDegree * 0.55
-        )
-        .map((n) => (
-          <text
-            key={"t-" + n.id}
-            x={n.x + 13}
-            y={n.y + 4}
-            fontFamily="DM Mono, monospace"
-            fontSize="10.5"
-            fill="#131711"
-            stroke="#f4f5ef"
-            strokeWidth="3.2"
-            paintOrder="stroke"
-            strokeLinejoin="round"
-          >
-            {n.name}
-          </text>
-        ))}
+      {labels.map((l) => (
+        <text
+          key={"t-" + l.id}
+          x={l.x}
+          y={l.y}
+          fontFamily="DM Mono, monospace"
+          fontSize="10.5"
+          fill="#131711"
+          stroke="#f4f5ef"
+          strokeWidth="3.2"
+          paintOrder="stroke"
+          strokeLinejoin="round"
+        >
+          {l.name}
+        </text>
+      ))}
     </svg>
   );
 }
