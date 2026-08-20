@@ -39,5 +39,10 @@ export default function useFetch(fetcher, deps = [], enabled = true) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
-  return { data, error, loading };
+  // Kad se deps promijene, React prvo ponovno renderira pa tek onda pokrene
+  // effect. U tom kratkom trenutku loading je jos false, a data je stara ili
+  // null — zato loading racunamo i iz toga ima li uopce rezultata.
+  const pending = enabled && data === null && error === null;
+
+  return { data, error, loading: loading || pending };
 }
